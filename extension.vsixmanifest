@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+	<PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
+		<Metadata>
+			<Identity Language="en-US" Id="roblox-asset-previewer" Version="1.0.0" Publisher="bluezczatu" />
+			<DisplayName>Roblox Asset Previewer</DisplayName>
+			<Description xml:space="preserve">The Roblox Asset Previewer for VS Code takes the mystery out of asset IDs. Get instant visual previews, author details, and asset types displayed inline with your scripts. Develop faster, debug smarter.</Description>
+			<Tags>roblox, vs code, extension, asset preview, scripting, development, luau, vscode</Tags>
+			<Categories>Programming Languages,Other</Categories>
+			<GalleryFlags>Public</GalleryFlags>
+			
+			<Properties>
+				<Property Id="Microsoft.VisualStudio.Code.Engine" Value="^1.75.0" />
+				<Property Id="Microsoft.VisualStudio.Code.ExtensionDependencies" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.ExtensionPack" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.ExtensionKind" Value="workspace" />
+				<Property Id="Microsoft.VisualStudio.Code.LocalizedLanguages" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.EnabledApiProposals" Value="" />
+				<Property Id="Microsoft.VisualStudio.Code.ExecutesCode" Value="true" />
+				<Property Id="Microsoft.VisualStudio.Code.Icon" Value="images/icon.png" />
+				<Property Id="Microsoft.VisualStudio.Services.GitHubUrl" Value="https://github.com/your-username/your-repo-name" />
+				<Property Id="Microsoft.VisualStudio.Services.License" Value="MIT" />
+				<Property Id="Microsoft.VisualStudio.Services.SupportUrl" Value="https://github.com/your-username/your-repo-name/issues" />
+				<Property Id="Microsoft.VisualStudio.Services.GitHubFlavoredMarkdown" Value="true" />
+				<Property Id="Microsoft.VisualStudio.Services.Content.Pricing" Value="Free"/>
+				<Property Id="Microsoft.VisualStudio.Services.Content.Overview" Path="README.md" />
+			</Properties>
+			
+			
+		</Metadata>
+		<Installation>
+			<InstallationTarget Id="Microsoft.VisualStudio.Code"/>
+		</Installation>
+		<Dependencies/>
+		<Assets>
+			<Asset Type="Microsoft.VisualStudio.Code.Manifest" Path="extension/package.json" Addressable="true" />
+			
+		</Assets>
+	</PackageManifest>
