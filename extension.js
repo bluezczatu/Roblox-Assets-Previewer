@@ -5,7 +5,7 @@ const os     = require('os');
 const path   = require('path');
 
 const ASSET_ID_RE = /rbxassetid:\/\/(\d+)/gi;
-const CACHE_DIR   = path.join(os.tmpdir(), 'rbx-asset-preview');
+const CACHE_DIR   = path.join(os.tmpdir(), 'roblox-asset-previewer');
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
 const ASSET_TYPES = {

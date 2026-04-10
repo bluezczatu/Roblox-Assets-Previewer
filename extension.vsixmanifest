@@ -16,7 +16,7 @@
 				<Property Id="Microsoft.VisualStudio.Code.LocalizedLanguages" Value="" />
 				<Property Id="Microsoft.VisualStudio.Code.EnabledApiProposals" Value="" />
 				<Property Id="Microsoft.VisualStudio.Code.ExecutesCode" Value="true" />
-				<Property Id="Microsoft.VisualStudio.Code.Icon" Value="images/icon.png" />
+				<Property Id="Microsoft.VisualStudio.Code.Icon" Value="icon.png" />
 				<Property Id="Microsoft.VisualStudio.Services.GitHubUrl" Value="https://github.com/bluezczatu/Roblox-Assets-Previewer" />
 				<Property Id="Microsoft.VisualStudio.Services.License" Value="MIT" />
 				<Property Id="Microsoft.VisualStudio.Services.SupportUrl" Value="https://github.com/bluezczatu/Roblox-Assets-Previewer/issues" />

@@ -1,9 +1,10 @@
 {
-  "name": "rbx-asset-preview",
+  "name": "roblox-asset-previewer",
+  "icon": "icon.png",
   "displayName": "Roblox Asset Previewer",
   "description": "The Roblox Asset Previewer for VS Code takes the mystery out of asset IDs. Get instant visual previews, author details, and asset types displayed inline with your scripts. Develop faster, debug smarter.",
   "version": "1.0.0",
-  "publisher": "local",
+  "publisher": "bluezczatu",
   "engines": { "vscode": "^1.75.0" },
   "categories": ["Other"],
   "activationEvents": ["onStartupFinished"],
@@ -12,7 +13,7 @@
     "configuration": {
       "title": "Roblox Asset Previewer",
       "properties": {
-        "rbxAssetPreview.imageSize": {
+        "RobloxAssetPreviewer.imageSize": {
           "type": "number",
           "default": 256,
           "description": "Preview Size (128–512 px)"

@@ -13,7 +13,7 @@ The Roblox Asset Previewer for VS Code takes the mystery out of asset IDs. Get i
 Just hover over any `rbxassetid://` value in your script:
 
 ```lua
-local icon = "rbxassetid://9457789056"
+local icon = "rbxassetid://119167014749013"
 ```
 
 A tooltip will appear with the asset preview and details.
