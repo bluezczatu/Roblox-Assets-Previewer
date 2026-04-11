@@ -15,9 +15,35 @@ const ASSET_TYPES = {
   40:'MeshPart',54:'CSGMesh',62:'Video',64:'Sound',65:'Script'
 };
 
-// ── Cache ────────────────────────────────────────────────────────────────────
-const TTL_MS      = 5 * 60 * 1000; // 5 min
-const detailCache = new Map();      // assetId → { data, ts }
+const ASSET_EXTENSIONS = {
+  1:  { ext: '.png',  label: 'PNG Image' },
+  2:  { ext: '.png',  label: 'PNG Image' },
+  3:  { ext: '.ogg',  label: 'Audio' },
+  4:  { ext: '.mesh', label: 'Mesh' },
+  5:  { ext: '.lua',  label: 'Lua Script' },
+  8:  { ext: '.rbxm', label: 'Roblox Model' },
+  9:  { ext: '.rbxl', label: 'Roblox Place' },
+  10: { ext: '.rbxm', label: 'Roblox Model' },
+  11: { ext: '.png',  label: 'PNG Image' },
+  12: { ext: '.png',  label: 'PNG Image' },
+  13: { ext: '.png',  label: 'PNG Image' },
+  17: { ext: '.rbxm', label: 'Roblox Model' },
+  18: { ext: '.png',  label: 'PNG Image' },
+  19: { ext: '.rbxm', label: 'Roblox Model' },
+  21: { ext: '.png',  label: 'PNG Image' },
+  24: { ext: '.rbxm', label: 'Roblox Model' },
+  34: { ext: '.rbxm', label: 'Roblox Model' },
+  38: { ext: '.rbxm', label: 'Roblox Model' },
+  40: { ext: '.mesh', label: 'Mesh' },
+  54: { ext: '.mesh', label: 'Mesh' },
+  62: { ext: '.webm', label: 'Video' },
+  64: { ext: '.ogg',  label: 'Audio' },
+  65: { ext: '.lua',  label: 'Lua Script' },
+};
+
+// ── Cache ─────────────────────────────────────────────────────────────────────
+const TTL_MS      = 5 * 60 * 1000;
+const detailCache = new Map();
 
 function cacheGet(id) {
   const entry = detailCache.get(id);
@@ -27,8 +53,7 @@ function cacheGet(id) {
 }
 function cacheSet(id, data) { detailCache.set(id, { data, ts: Date.now() }); }
 
-// ── Rate limiter ─────────────────────────────────────────────────────────────
-// Max 1 new network round-trip per 300 ms
+// ── Rate limiter ──────────────────────────────────────────────────────────────
 const queue   = [];
 let lastFired = 0;
 
@@ -52,7 +77,7 @@ function drainQueue() {
   }, wait);
 }
 
-// ── HTTP helper ──────────────────────────────────────────────────────────────
+// ── HTTP helper ───────────────────────────────────────────────────────────────
 function httpsGet(url, redirects = 0) {
   return new Promise((resolve, reject) => {
     if (redirects > 5) return reject(new Error('Too many redirects'));
@@ -73,14 +98,26 @@ async function getJson(url) {
   try { return JSON.parse(body.toString()); } catch { return null; }
 }
 
-// ── API calls ────────────────────────────────────────────────────────────────
-async function getThumbnailUrl(assetId) {
+// ── API calls ─────────────────────────────────────────────────────────────────
+async function getThumbnailUrl(assetId, retries = 3) {
   const json = await getJson(
-    `https://thumbnails.roblox.com/v1/assets?assetIds=${assetId}&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false`
+    `https://thumbnails.roblox.com/v1/assets?assetIds=${assetId}&returnPolicy=Pending&size=420x420&format=Png&isCircular=false`
   );
-  const url = json?.data?.[0]?.imageUrl;
-  if (!url) throw new Error('No imageUrl from thumbnails API');
-  return url;
+
+  const item  = json?.data?.[0];
+  const state = item?.state;
+  const url   = item?.imageUrl;
+
+  if (state === 'Blocked') throw new Error('Asset is moderated');
+  if (state === 'Completed' && url) return url;
+
+  // Pending — miniatura jest generowana, retry
+  if (retries > 0) {
+    await new Promise(r => setTimeout(r, 1500));
+    return getThumbnailUrl(assetId, retries - 1);
+  }
+
+  throw new Error(`Thumbnail not ready (state: ${state ?? 'unknown'})`);
 }
 
 async function fetchAllDetails(assetId) {
@@ -92,11 +129,7 @@ async function fetchAllDetails(assetId) {
     getJson(`https://catalog.roblox.com/v1/favorites/assets/${assetId}/count`),
   ]);
 
-  const result = {
-    details,
-    favourites: favJson?.count ?? null,
-  };
-
+  const result = { details, favourites: favJson?.count ?? null };
   cacheSet(assetId, result);
   return result;
 }
@@ -113,10 +146,35 @@ async function fetchImage(assetId) {
   return filePath;
 }
 
-// ── Hover ────────────────────────────────────────────────────────────────────
+// ── Download command ──────────────────────────────────────────────────────────
+async function downloadAsset(assetId, assetTypeId) {
+  try {
+    const typeInfo = ASSET_EXTENSIONS[assetTypeId] ?? { ext: '.bin', label: 'File' };
+    const { ext, label } = typeInfo;
+
+    const saveUri = await vscode.window.showSaveDialog({
+      defaultUri: vscode.Uri.file(path.join(os.homedir(), `${assetId}${ext}`)),
+      filters: { [label]: [ext.replace('.', '')] },
+    });
+    if (!saveUri) return;
+
+    const { status, body } = await httpsGet(
+      `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}`
+    );
+
+    if (status !== 200) throw new Error(`HTTP ${status}`);
+
+    fs.writeFileSync(saveUri.fsPath, body);
+    vscode.window.showInformationMessage(`Saved: ${path.basename(saveUri.fsPath)}`);
+  } catch (err) {
+    vscode.window.showErrorMessage(`Download failed: ${err.message}`);
+  }
+}
+
+// ── Hover ─────────────────────────────────────────────────────────────────────
 async function provideHover(document, position) {
   const line   = document.lineAt(position.line).text;
-  const config = vscode.workspace.getConfiguration('rbxAssetPreview');
+  const config = vscode.workspace.getConfiguration('RobloxAssetPreviewer');
   const size   = Math.min(512, Math.max(128, config.get('imageSize', 256)));
 
   ASSET_ID_RE.lastIndex = 0;
@@ -140,7 +198,7 @@ async function provideHover(document, position) {
 
     const lines = [];
 
-    // ── Image ──
+    // Image
     if (imageResult.status === 'fulfilled') {
       const fileUri = vscode.Uri.file(imageResult.value).toString();
       lines.push(`![${assetId}](${fileUri}|width=${size})`);
@@ -149,38 +207,43 @@ async function provideHover(document, position) {
     }
     lines.push('');
 
-    // ── Info ──
+    // Info
     const row = (label, value) => value != null ? `**${label}:** ${value}` : null;
 
-    const type    = d?.AssetTypeId ? (ASSET_TYPES[d.AssetTypeId] || `Type ${d.AssetTypeId}`) : null;
-    const creator = d?.Creator?.Name ?? null;
-    const added   = d?.Created ? new Date(d.Created).toLocaleDateString('en-GB') : null;
+    const assetTypeId = d?.AssetTypeId ?? null;
+    const type        = assetTypeId ? (ASSET_TYPES[assetTypeId] || `Type ${assetTypeId}`) : null;
+    const ext         = assetTypeId ? (ASSET_EXTENSIONS[assetTypeId]?.ext ?? '.bin') : null;
+    const creator     = d?.Creator?.Name ?? null;
+    const added       = d?.Created ? new Date(d.Created).toLocaleDateString('en-GB') : null;
 
     let price = null;
     if (d) {
-      if (!d.IsForSale)           price = 'Not for sale';
+      if (!d.IsForSale)              price = 'Not for sale';
       else if (d.PriceInRobux === 0) price = 'Free';
-      else if (d.PriceInRobux)    price = `${d.PriceInRobux} R$`;
-      if (d.IsLimitedUnique)      price = (price ? price + ' ' : '') + '🔴 Limited U';
-      else if (d.IsLimited)       price = (price ? price + ' ' : '') + '🟡 Limited';
+      else if (d.PriceInRobux)       price = `${d.PriceInRobux} R$`;
+      if (d.IsLimitedUnique)         price = (price ? price + ' ' : '') + 'Limited U';
+      else if (d.IsLimited)          price = (price ? price + ' ' : '') + 'Limited';
     }
 
-    const sales = d?.Sales != null ? d.Sales.toLocaleString('en') : null;
+    const sales   = d?.Sales != null ? d.Sales.toLocaleString('en') : null;
     const favsStr = favs != null ? favs.toLocaleString('en') : null;
 
     const info = [
-      row('Name',       d?.Name ?? assetId),
-      row('Type',       type),
-      row('Creator',    creator),
-      row('Created',    added),
-      row('Price',      price),
-      row('Sales',      sales),
-      row('Favorites',  favsStr),
+      row('Name',      d?.Name ?? assetId),
+      row('Type',      type ? `${type} (${assetTypeId})` : null),
+      row('Extension', ext),
+      row('Creator',   creator),
+      row('Created',   added),
+      row('Price',     price),
+      row('Sales',     sales),
+      row('Favorites', favsStr),
     ].filter(Boolean);
 
     lines.push(info.join('  \n'));
     lines.push('');
-    lines.push(`[Open on Roblox](https://www.roblox.com/catalog/${assetId}) · [Download via API](https://assetdelivery.roblox.com/v1/asset/?id=${assetId})`);
+
+    const downloadCmd = `command:RobloxAssetPreviewer.download?${encodeURIComponent(JSON.stringify([assetId, assetTypeId]))}`;
+    lines.push(`[Open on Roblox](https://create.roblox.com/store/asset/${assetId}) · [Download ${ext ?? ''}](${downloadCmd})`);
 
     const md = new vscode.MarkdownString(lines.join('\n\n'));
     md.isTrusted = true;
@@ -193,7 +256,13 @@ function activate(context) {
     { scheme: 'file' },
     { provideHover }
   );
-  context.subscriptions.push(provider);
+
+  const downloadCmd = vscode.commands.registerCommand(
+    'RobloxAssetPreviewer.download',
+    (assetId, assetTypeId) => downloadAsset(assetId, assetTypeId)
+  );
+
+  context.subscriptions.push(provider, downloadCmd);
 }
 
 function deactivate() {}
