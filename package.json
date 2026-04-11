@@ -3,7 +3,7 @@
   "icon": "icon.png",
   "displayName": "Roblox Asset Previewer",
   "description": "The Roblox Asset Previewer for VS Code takes the mystery out of asset IDs. Get instant visual previews, author details, and asset types displayed inline with your scripts. Develop faster, debug smarter.",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "publisher": "bluezczatu",
   "engines": { "vscode": "^1.75.0" },
   "categories": ["Other"],
@@ -18,6 +18,10 @@
       {
         "command": "RobloxAssetPreviewer.download",
         "title": "Roblox Asset Preview: Download Asset"
+      },
+      {
+        "command": "RobloxAssetPreviewer.listen",
+        "title": "Roblox Asset Preview: Listen to Audio"
       }
     ],
     "configuration": {
@@ -27,6 +31,16 @@
           "type": "number",
           "default": 256,
           "description": "Preview Size (128–512 px)"
+        },
+        "RobloxAssetPreviewer.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Roblox Open Cloud API Key (requires 'legacy-asset:manage' or 'asset:read' scope) for private assets."
+        },
+        "RobloxAssetPreviewer.oauthToken": {
+          "type": "string",
+          "default": "",
+          "description": "Roblox Open Cloud OAuth 2.0 Bearer Token for private assets."
         }
       }
     }
