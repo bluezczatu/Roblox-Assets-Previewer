@@ -15,25 +15,26 @@ const ASSET_TYPES = {
   40:'MeshPart',54:'CSGMesh',62:'Video',64:'Sound',65:'Script'
 };
 
+// Asset type → file extension + filter label for save dialog
 const ASSET_EXTENSIONS = {
   1:  { ext: '.png',  label: 'PNG Image' },
-  2:  { ext: '.png',  label: 'PNG Image' },
+  2:  { ext: '.png',  label: 'PNG Image' },   // TShirt
   3:  { ext: '.ogg',  label: 'Audio' },
   4:  { ext: '.mesh', label: 'Mesh' },
   5:  { ext: '.lua',  label: 'Lua Script' },
-  8:  { ext: '.rbxm', label: 'Roblox Model' },
+  8:  { ext: '.rbxm', label: 'Roblox Model' }, // Hat
   9:  { ext: '.rbxl', label: 'Roblox Place' },
   10: { ext: '.rbxm', label: 'Roblox Model' },
-  11: { ext: '.png',  label: 'PNG Image' },
-  12: { ext: '.png',  label: 'PNG Image' },
-  13: { ext: '.png',  label: 'PNG Image' },
-  17: { ext: '.rbxm', label: 'Roblox Model' },
-  18: { ext: '.png',  label: 'PNG Image' },
-  19: { ext: '.rbxm', label: 'Roblox Model' },
-  21: { ext: '.png',  label: 'PNG Image' },
-  24: { ext: '.rbxm', label: 'Roblox Model' },
-  34: { ext: '.rbxm', label: 'Roblox Model' },
-  38: { ext: '.rbxm', label: 'Roblox Model' },
+  11: { ext: '.png',  label: 'PNG Image' },   // Shirt
+  12: { ext: '.png',  label: 'PNG Image' },   // Pants
+  13: { ext: '.png',  label: 'PNG Image' },   // Decal
+  17: { ext: '.rbxm', label: 'Roblox Model' }, // Head
+  18: { ext: '.png',  label: 'PNG Image' },   // Face
+  19: { ext: '.rbxm', label: 'Roblox Model' }, // Gear
+  21: { ext: '.png',  label: 'PNG Image' },   // Badge
+  24: { ext: '.rbxm', label: 'Roblox Model' }, // Animation
+  34: { ext: '.rbxm', label: 'Roblox Model' }, // GamePass
+  38: { ext: '.rbxm', label: 'Roblox Model' }, // Plugin
   40: { ext: '.mesh', label: 'Mesh' },
   54: { ext: '.mesh', label: 'Mesh' },
   62: { ext: '.webm', label: 'Video' },
@@ -158,13 +159,20 @@ async function downloadAsset(assetId, assetTypeId) {
     });
     if (!saveUri) return;
 
-    const { status, body } = await httpsGet(
-      `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}`
-    );
+    const IMAGE_TYPES = new Set([1, 2, 11, 12, 13, 18, 21]);
+    if (IMAGE_TYPES.has(assetTypeId)) {
+      // Use cached thumbnail — assetdelivery requires auth for images
+      const cachedPath = await fetchImage(assetId);
+      fs.copyFileSync(cachedPath, saveUri.fsPath);
+    } else {
+      const { status, body } = await httpsGet(
+        `https://assetdelivery.roblox.com/v1/asset/?id=${assetId}`
+      );
+      if (status === 401) throw new Error('Asset requires authentication — cannot download');
+      if (status !== 200) throw new Error(`HTTP ${status}`);
+      fs.writeFileSync(saveUri.fsPath, body);
+    }
 
-    if (status !== 200) throw new Error(`HTTP ${status}`);
-
-    fs.writeFileSync(saveUri.fsPath, body);
     vscode.window.showInformationMessage(`Saved: ${path.basename(saveUri.fsPath)}`);
   } catch (err) {
     vscode.window.showErrorMessage(`Download failed: ${err.message}`);
@@ -174,7 +182,7 @@ async function downloadAsset(assetId, assetTypeId) {
 // ── Hover ─────────────────────────────────────────────────────────────────────
 async function provideHover(document, position) {
   const line   = document.lineAt(position.line).text;
-  const config = vscode.workspace.getConfiguration('RobloxAssetPreviewer');
+  const config = vscode.workspace.getConfiguration('rbxAssetPreview');
   const size   = Math.min(512, Math.max(128, config.get('imageSize', 256)));
 
   ASSET_ID_RE.lastIndex = 0;
@@ -221,8 +229,8 @@ async function provideHover(document, position) {
       if (!d.IsForSale)              price = 'Not for sale';
       else if (d.PriceInRobux === 0) price = 'Free';
       else if (d.PriceInRobux)       price = `${d.PriceInRobux} R$`;
-      if (d.IsLimitedUnique)         price = (price ? price + ' ' : '') + 'Limited U';
-      else if (d.IsLimited)          price = (price ? price + ' ' : '') + 'Limited';
+      if (d.IsLimitedUnique)         price = (price ? price + ' ' : '') + '🔴 Limited U';
+      else if (d.IsLimited)          price = (price ? price + ' ' : '') + '🟡 Limited';
     }
 
     const sales   = d?.Sales != null ? d.Sales.toLocaleString('en') : null;
@@ -242,7 +250,7 @@ async function provideHover(document, position) {
     lines.push(info.join('  \n'));
     lines.push('');
 
-    const downloadCmd = `command:RobloxAssetPreviewer.download?${encodeURIComponent(JSON.stringify([assetId, assetTypeId]))}`;
+    const downloadCmd = `command:rbxAssetPreview.download?${encodeURIComponent(JSON.stringify([assetId, assetTypeId]))}`;
     lines.push(`[Open on Roblox](https://create.roblox.com/store/asset/${assetId}) · [Download ${ext ?? ''}](${downloadCmd})`);
 
     const md = new vscode.MarkdownString(lines.join('\n\n'));
@@ -258,7 +266,7 @@ function activate(context) {
   );
 
   const downloadCmd = vscode.commands.registerCommand(
-    'RobloxAssetPreviewer.download',
+    'rbxAssetPreview.download',
     (assetId, assetTypeId) => downloadAsset(assetId, assetTypeId)
   );
 
