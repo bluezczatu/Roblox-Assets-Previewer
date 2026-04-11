@@ -9,6 +9,10 @@
   "categories": ["Other"],
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bluezczatu/roblox-asset-previewer"
+  },
   "contributes": {
     "commands": [
       {
