@@ -1,18 +1,40 @@
 {
   "name": "roblox-asset-previewer",
-  "icon": "icon.png",
   "displayName": "Roblox Asset Previewer",
-  "description": "The Roblox Asset Previewer for VS Code takes the mystery out of asset IDs. Get instant visual previews, author details, and asset types displayed inline with your scripts. Develop faster, debug smarter.",
-  "version": "1.0.3",
+  "description": "Preview Roblox assets instantly. Get inline visual previews, audio playback, and author details for Roblox Luau and TypeScript developers.",
+  "version": "1.0.5",
   "publisher": "bluezczatu",
-  "engines": { "vscode": "^1.75.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onStartupFinished"],
+  "author": "bluezczatu",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Visualization",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "roblox",
+    "roblox asset",
+    "luau",
+    "typescript",
+    "roblox studio"
+  ],
+  "activationEvents": [
+    "onLanguage:lua",
+    "onLanguage:luau",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
+  ],
   "main": "./extension.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/bluezczatu/roblox-asset-previewer"
   },
+  "bugs": {
+    "url": "https://github.com/bluezczatu/roblox-asset-previewer/issues"
+  },
+  "homepage": "https://github.com/bluezczatu/roblox-asset-previewer#readme",
   "contributes": {
     "commands": [
       {

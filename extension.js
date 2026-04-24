@@ -4,7 +4,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const ASSET_ID_RE = /rbxassetid:\/\/(\d+)/gi;
+// Zaktualizowany RegEx wykrywający 3 formaty:
+// 1. Content.fromUri("rbxassetid://12345")
+// 2. Content.fromAssetId(12345)
+// 3. rbxassetid://12345
+const ASSET_ID_RE = /(?:Content\.fromUri\(\s*['"`]?rbxassetid:\/\/(\d+)['"`]?\s*\))|(?:Content\.fromAssetId\(\s*(\d+)\s*\))|(?:rbxassetid:\/\/(\d+))/gi;
+
 const CACHE_DIR = path.join(os.tmpdir(), 'roblox-assets-cache-v2');
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
@@ -356,7 +361,8 @@ async function provideHover(document, position) {
     const end = match.index + match[0].length;
     if (position.character < start || position.character > end) continue;
 
-    const assetId = match[1];
+    // Poprawione zbieranie AssetID ze wszystkich 3 grup RegExa
+    const assetId = match[1] || match[2] || match[3];
     const range = new vscode.Range(position.line, start, position.line, end);
 
     const [imageResult, dataResult] = await Promise.allSettled([
