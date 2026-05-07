@@ -4,5 +4,5 @@ local sound = "rbxassetid://88815890137184"
 
 local icon2 = "rbxassetid://137279463"
 local icon3 = "rbxassetid://137279463"
-Content.fromUri("rbxassetid://18411329893")
-Content.fromAssetId(137279463)
+Content.fromUri("rbxassetid://9612633750")
+Content.fromAssetId(5670802294)
